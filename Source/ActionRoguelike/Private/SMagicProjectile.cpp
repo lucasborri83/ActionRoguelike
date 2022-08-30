@@ -10,10 +10,7 @@ ASMagicProjectile::ASMagicProjectile()
 	PrimaryActorTick.bCanEverTick = true;
 
 	SphereComp = CreateDefaultSubobject<USphereComponent>("SphereComp");
-	SphereComp->SetCollisionObjectType(ECC_WorldDynamic);
-	SphereComp->SetCollisionResponseToAllChannels(ECR_Ignore);
-	SphereComp->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	
+	SphereComp->SetCollisionProfileName("Projectile");	
 	RootComponent = SphereComp;
 
 	EffectComp = CreateDefaultSubobject<UParticleSystemComponent>("EffectComp");
