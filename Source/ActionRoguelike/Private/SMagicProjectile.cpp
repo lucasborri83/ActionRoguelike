@@ -8,18 +8,6 @@
 ASMagicProjectile::ASMagicProjectile()
 {
 	PrimaryActorTick.bCanEverTick = true;
-
-	SphereComp = CreateDefaultSubobject<USphereComponent>("SphereComp");
-	SphereComp->SetCollisionProfileName("Projectile");	
-	RootComponent = SphereComp;
-
-	EffectComp = CreateDefaultSubobject<UParticleSystemComponent>("EffectComp");
-	EffectComp->SetupAttachment(SphereComp);
-
-	MovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>("MovementComp");
-	MovementComponent->InitialSpeed = 1000.0f;
-	MovementComponent->bRotationFollowsVelocity = true;
-	MovementComponent->bInitialVelocityInLocalSpace = true;
 }
 
 // Called when the game starts or when spawned

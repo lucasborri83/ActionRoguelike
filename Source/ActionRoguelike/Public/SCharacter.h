@@ -21,6 +21,12 @@ protected:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<AActor> ProjectileClass;
 
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> BlackHoleProjectileClass;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<AActor> DashProjectileClass;
+
 	UPROPERTY(EditAnywhere, Category = "Attack");
 	UAnimMontage* AttackAnim;
 
@@ -50,9 +56,19 @@ protected:
 
 	void PrimaryAttack();
 
+	void SecondaryAttack();
+
+	void UltimateAttack();
+
 	void PrimaryInteract();
 
 	void PrimaryAttack_TimeElapsed();
+
+	void SecondaryAttack_TimeElapsed();
+
+	void UltimateAttack_TimeElapsed();
+
+	void SpawnProjectile(TSubclassOf<AActor> ClassToSpawn);
 
 public:	
 	// Called every frame

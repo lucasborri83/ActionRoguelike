@@ -62,6 +62,25 @@ void ASCharacter::PrimaryAttack()
 	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &ASCharacter::PrimaryAttack_TimeElapsed, 0.2f);
 }
 
+void ASCharacter::SecondaryAttack()
+{
+	UE_LOG(LogTemp, Display, TEXT("Secondaty Attack"));
+	PlayAnimMontage(AttackAnim);
+
+	// Timer for spawn the projectile when attack animation is almost done.
+	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &ASCharacter::SecondaryAttack_TimeElapsed, 0.2f);
+}
+
+void ASCharacter::UltimateAttack()
+{
+	UE_LOG(LogTemp, Display, TEXT("Ultimate Attack"));
+
+	PlayAnimMontage(AttackAnim);
+
+	// Timer for spawn the projectile when attack animation is almost done.
+	GetWorldTimerManager().SetTimer(TimerHandle_PrimaryAttack, this, &ASCharacter::UltimateAttack_TimeElapsed, 0.2f);
+}
+
 void ASCharacter::PrimaryInteract()
 {
 	InteractionComp->PrimaryInteract();
@@ -69,46 +88,64 @@ void ASCharacter::PrimaryInteract()
 
 void ASCharacter::PrimaryAttack_TimeElapsed()
 {
-	// Location where to spawn the magic projectile
-	FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+	SpawnProjectile(ProjectileClass);
+}
 
-	// In order to have a proper hit point, we need to execute a sphere-tracing.
-	// From the hand to the center of the camera.
-	// If nothing is hit, keep the projectile for 5000 units. If something is hit, change the rotator
-	// to point to the right direction.
-	FCollisionShape Shape;
-	Shape.SetSphere(20.0f);
+void ASCharacter::SecondaryAttack_TimeElapsed()
+{
+	SpawnProjectile(BlackHoleProjectileClass);
+}
 
-	FCollisionQueryParams QueryParams;
-	QueryParams.AddIgnoredActor(this); // Ignore player when sweeping. 
+void ASCharacter::UltimateAttack_TimeElapsed()
+{
+	SpawnProjectile(DashProjectileClass);
+}
 
-	FCollisionObjectQueryParams ObjQueryParams;
-	ObjQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
-	ObjQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
-	ObjQueryParams.AddObjectTypesToQuery(ECC_Pawn);
-
-	FVector TraceStart = CameraComp->GetComponentLocation();
-	FVector TraceEnd = TraceStart + (GetControlRotation().Vector() * 5000);
-
-	FHitResult Hit;
-
-	if (GetWorld()->SweepSingleByObjectType(Hit, TraceStart, TraceEnd, FQuat::Identity, ObjQueryParams, Shape, QueryParams))
+void ASCharacter::SpawnProjectile(TSubclassOf<AActor> ClassToSpawn)
+{
+	if (ensure(ClassToSpawn)) // To avoid empty calls!
 	{
-		// If we hit something, update the end with that location.
-		TraceEnd = Hit.ImpactPoint;
+		// Location where to spawn the magic projectile
+		FVector HandLocation = GetMesh()->GetSocketLocation("Muzzle_01");
+
+		// In order to have a proper hit point, we need to execute a sphere-tracing.
+		// From the hand to the center of the camera.
+		// If nothing is hit, keep the projectile for 5000 units. If something is hit, change the rotator
+		// to point to the right direction.
+		FCollisionShape Shape;
+		Shape.SetSphere(20.0f);
+
+		FCollisionQueryParams QueryParams;
+		QueryParams.AddIgnoredActor(this); // Ignore player when sweeping. 
+
+		FCollisionObjectQueryParams ObjQueryParams;
+		ObjQueryParams.AddObjectTypesToQuery(ECC_WorldDynamic);
+		ObjQueryParams.AddObjectTypesToQuery(ECC_WorldStatic);
+		ObjQueryParams.AddObjectTypesToQuery(ECC_Pawn);
+
+		FVector TraceStart = CameraComp->GetComponentLocation();
+		FVector TraceEnd = TraceStart + (GetControlRotation().Vector() * 5000); // 5000 units that is 5000 cm
+
+		FHitResult Hit;
+
+		if (GetWorld()->SweepSingleByObjectType(Hit, TraceStart, TraceEnd, FQuat::Identity, ObjQueryParams, Shape, QueryParams))
+		{
+			// If we hit something, update the end with that location.
+			TraceEnd = Hit.ImpactPoint;
+		}
+
+		// Finally obtain the correct rotation for the projectile
+		FRotator ProjectileRotation = FRotationMatrix::MakeFromX(TraceEnd - HandLocation).Rotator();
+
+		// Spawn the projectile
+		FTransform SpawnTM = FTransform(ProjectileRotation, HandLocation);
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		SpawnParams.Instigator = this;
+
+		GetWorld()->SpawnActor<AActor>(ClassToSpawn, SpawnTM, SpawnParams);
 	}
-
-	// Finally obtain the correct rotation for the projectile
-	FRotator ProjectileRotation = FRotationMatrix::MakeFromX(TraceEnd - HandLocation).Rotator();
-
-	// Spawn the projectile
-	FTransform SpawnTM = FTransform(ProjectileRotation, HandLocation);
-	
-	FActorSpawnParameters SpawnParams;
-	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-	SpawnParams.Instigator = this;
-
-	GetWorld()->SpawnActor<AActor>(ProjectileClass, SpawnTM, SpawnParams);
 }
 
 // Called every frame
@@ -130,6 +167,9 @@ void ASCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 
 	// Bind Actions
 	PlayerInputComponent->BindAction("PrimaryAttack", IE_Pressed, this, &ASCharacter::PrimaryAttack);
+	PlayerInputComponent->BindAction("SecondaryAttack", IE_Pressed, this, &ASCharacter::SecondaryAttack);
+	PlayerInputComponent->BindAction("UltimateAttack", IE_Pressed, this, &ASCharacter::UltimateAttack);
+
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ASCharacter::Jump);
 	PlayerInputComponent->BindAction("PrimaryInteract", IE_Pressed, this, &ASCharacter::PrimaryInteract);
 
