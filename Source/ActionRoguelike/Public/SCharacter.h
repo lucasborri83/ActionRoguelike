@@ -10,6 +10,7 @@ class UCameraComponent;
 class USpringArmComponent;
 class USInteractionComponent;
 class UAnimMontage;
+class USAttributeComponent;
 
 UCLASS()
 class ACTIONROGUELIKE_API ASCharacter : public ACharacter
@@ -29,6 +30,9 @@ protected:
 
 	UPROPERTY(EditAnywhere, Category = "Attack");
 	UAnimMontage* AttackAnim;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Components")
+	USAttributeComponent* AttributeComp;
 
 public:
 	// Sets default values for this character's properties
